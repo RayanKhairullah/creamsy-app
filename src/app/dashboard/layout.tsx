@@ -39,7 +39,8 @@ export default function DashboardLayout({
       </header>
       <main className="flex-grow p-4">{children}</main>
       <nav className="bg-gray-100 p-2 flex justify-around border-t">
-        <DashboardNavLink href="/dashboard/produk" label="Produk" />
+        <DashboardNavLink href="/dashboard" label="Produk" />
+        <DashboardNavLink href="/dashboard/products" label="Kelola Produk" />
         <DashboardNavLink href="/dashboard/transaksi" label="Transaksi" />
         <DashboardNavLink href="/dashboard/laporan" label="Laporan" />
       </nav>
