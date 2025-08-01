@@ -8,9 +8,10 @@ import { Product } from '@/types';
 interface ProductGridProps {
   products: Product[];
   onAddToCart: (product: Product) => void;
+  className?: string;
 }
 
-export default function ProductGrid({ products, onAddToCart }: ProductGridProps) {
+export default function ProductGrid({ products, onAddToCart, className = '' }: ProductGridProps) {
   const [showConfetti, setShowConfetti] = useState(false);
   
   const handleAdd = (product: Product) => {
@@ -20,8 +21,9 @@ export default function ProductGrid({ products, onAddToCart }: ProductGridProps)
   };
 
   return (
-    <div className="p-4">
-      <div className="grid grid-cols-3 gap-4">
+    <div className={className}>
+      <h2 className="mb-3 font-semibold text-lg">Base</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {products
           .filter((p) => p.type === 'base')
           .map((product) => (
@@ -43,8 +45,8 @@ export default function ProductGrid({ products, onAddToCart }: ProductGridProps)
               ) : (
                 <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 mb-1" />
               )}
-              <div className="font-bold text-center text-sm">{product.name}</div>
-              <div className="text-xs">Rp {product.price.toLocaleString()}</div>
+              <div className="font-bold text-center text-sm text-black">{product.name}</div>
+              <div className="text-xs text-black">Rp {product.price.toLocaleString()}</div>
             </motion.button>
           ))}
       </div>
@@ -72,8 +74,8 @@ export default function ProductGrid({ products, onAddToCart }: ProductGridProps)
               ) : (
                 <div className="bg-gray-200 border-2 border-dashed rounded-xl w-12 h-12 mb-1" />
               )}
-              <div className="text-center text-xs">{product.name}</div>
-              <div className="text-xs">+Rp {product.price.toLocaleString()}</div>
+              <div className="text-center text-xs text-black">{product.name}</div>
+              <div className="text-xs text-black">+Rp {product.price.toLocaleString()}</div>
             </motion.button>
           ))}
       </div>

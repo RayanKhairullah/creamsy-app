@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Transaction } from "@/types";
 import { getTransactions } from "@/lib/transactionService";
+import * as XLSX from 'xlsx';
 
 export default function LaporanPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -16,30 +17,54 @@ export default function LaporanPage() {
     fetchTransactions();
   }, []);
 
+  // XLSX export handler
+  const handleExport = () => {
+    const dataForExport = transactions.map(trx => ({
+      Tanggal: new Date(trx.timestamp).toLocaleDateString(),
+      'ID Transaksi': trx.id,
+      Total: trx.total,
+      Metode: trx.payment.method
+    }));
+    const ws = XLSX.utils.json_to_sheet(dataForExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Laporan Penjualan');
+    XLSX.writeFile(wb, 'laporan-penjualan.xlsx');
+  };
+
   return (
-    <div>
-      <h1 className="text-xl font-bold mb-4">Laporan Penjualan</h1>
-      <div className="mb-4">Total Pemasukan: <span className="font-bold">Rp {totalIncome.toLocaleString()}</span></div>
-      <table className="w-full bg-white rounded shadow text-black">
-        <thead>
-          <tr>
-            <th className="text-left p-2">Tanggal</th>
-            <th className="text-left p-2">ID Transaksi</th>
-            <th className="text-left p-2">Total</th>
-            <th className="text-left p-2">Metode</th>
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((trx) => (
-            <tr key={trx.id}>
-              <td className="p-2">{new Date(trx.timestamp).toLocaleDateString()}</td>
-              <td className="p-2">{trx.id}</td>
-              <td className="p-2">Rp {trx.total.toLocaleString()}</td>
-              <td className="p-2">{trx.payment.method}</td>
+    <div className="max-w-4xl mx-auto p-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
+        <h1 className="text-2xl font-bold text-ice-cream-700">Laporan Penjualan</h1>
+        <button
+          onClick={handleExport}
+          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow font-semibold transition"
+        >
+          Export Excel
+        </button>
+      </div>
+      <div className="mb-4 text-lg">Total Pemasukan: <span className="font-bold text-ice-cream-600">Rp {totalIncome.toLocaleString()}</span></div>
+      <div className="overflow-x-auto rounded shadow">
+        <table className="min-w-full bg-white text-black border border-gray-200">
+          <thead className="bg-ice-cream-100">
+            <tr>
+              <th className="text-left p-3 border-b font-semibold">Tanggal</th>
+              <th className="text-left p-3 border-b font-semibold">ID Transaksi</th>
+              <th className="text-left p-3 border-b font-semibold">Total</th>
+              <th className="text-left p-3 border-b font-semibold">Metode</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {transactions.map((trx, idx) => (
+              <tr key={trx.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                <td className="p-3 border-b">{new Date(trx.timestamp).toLocaleDateString()}</td>
+                <td className="p-3 border-b font-mono text-xs">{trx.id}</td>
+                <td className="p-3 border-b text-right">Rp {trx.total.toLocaleString()}</td>
+                <td className="p-3 border-b">{trx.payment.method}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

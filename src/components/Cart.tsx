@@ -5,9 +5,11 @@ import { CartItem } from '@/types';
 
 interface CartProps {
   items: CartItem[];
+  onRemoveItem: (index: number) => void;
+  onClearCart: () => void;
 }
 
-export default function Cart({ items }: CartProps) {
+export default function Cart({ items, onRemoveItem, onClearCart }: CartProps) {
   const router = useRouter();
   const total = items.reduce((sum, item) => sum + item.totalPrice, 0);
   

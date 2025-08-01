@@ -1,28 +1,58 @@
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from './firebase';
+import { supabase } from './supabase';
 import { Product } from '@/types';
 
-const productsCollection = collection(db, 'products');
-
 export const getProducts = async (): Promise<Product[]> => {
-  const querySnapshot = await getDocs(productsCollection);
-  return querySnapshot.docs.map(docSnap => ({
-    id: docSnap.id,
-    ...docSnap.data()
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .order('name');
+
+  if (error) throw error;
+  
+  return data.map(item => ({
+    id: item.id,
+    name: item.name,
+    price: item.price,
+    type: item.type,
+    image: item.image_url
   })) as Product[];
 };
 
 export const createProduct = async (product: Omit<Product, 'id'>): Promise<string> => {
-  const docRef = await addDoc(productsCollection, product);
-  return docRef.id;
+  const { data, error } = await supabase
+    .from('products')
+    .insert([{
+      name: product.name,
+      price: product.price,
+      type: product.type,
+      image_url: product.image
+    }])
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return data.id;
 };
 
 export const updateProduct = async (id: string, product: Partial<Omit<Product, 'id'>>): Promise<void> => {
-  const productRef = doc(db, 'products', id);
-  await updateDoc(productRef, product);
+  const { error } = await supabase
+    .from('products')
+    .update({
+      name: product.name,
+      price: product.price,
+      type: product.type,
+      image_url: product.image
+    })
+    .eq('id', id);
+
+  if (error) throw error;
 };
 
 export const deleteProduct = async (id: string): Promise<void> => {
-  const productRef = doc(db, 'products', id);
-  await deleteDoc(productRef);
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
 };

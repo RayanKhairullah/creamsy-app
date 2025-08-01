@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { saveTransaction } from '@/lib/transactionService';
 import { CartItem } from '@/types';
 
 export default function PaymentPage() {
@@ -33,30 +32,20 @@ export default function PaymentPage() {
     setIsSaving(true);
     
     try {
-      // Generate transaction ID
-      const now = new Date();
-      const dateStr = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}`;
-      const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-      const transactionId = `IC-${dateStr}-${randomNum}`;
-      
-      // Save transaction to Firestore
-      await addDoc(collection(db, 'transactions'), {
-        id: transactionId,
-        items: cartItems,
-        total,
-        payment: {
-          method: paymentMethod,
-          cashReceived: paymentMethod === 'cash' ? Number(cashReceived) : 0,
-          change: paymentMethod === 'cash' ? (Number(cashReceived) - total) : 0
-        },
-        timestamp: serverTimestamp()
+      const transactionId = await saveTransaction(cartItems, {
+        method: paymentMethod,
+        cashReceived: paymentMethod === 'cash' ? Number(cashReceived) : 0,
+        change: paymentMethod === 'cash' ? (Number(cashReceived) - total) : 0
       });
       
-      // Clear cart
-      localStorage.removeItem('creamsy_cart');
-      
-      // Redirect to receipt page
-      router.push(`/dashboard/receipt?id=${transactionId}`);
+      if (transactionId) {
+        // Clear cart
+        localStorage.removeItem('creamsy_cart');
+        // Redirect to receipt page
+        router.push(`/dashboard/receipt?id=${transactionId}`);
+      } else {
+        throw new Error('Transaction ID not returned');
+      }
     } catch (error) {
       console.error("Error saving transaction: ", error);
       alert('Terjadi kesalahan. Silakan coba lagi.');
@@ -66,7 +55,7 @@ export default function PaymentPage() {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 text-black">
       <h1 className="text-xl font-bold mb-6">Pembayaran</h1>
       
       <div className="mb-6">

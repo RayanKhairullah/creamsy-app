@@ -1,8 +1,7 @@
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getTransactionById } from '@/lib/transactionService';
 import { Transaction, CartItem } from '@/types';
 
 export default function ReceiptPage() {
@@ -14,28 +13,20 @@ export default function ReceiptPage() {
   
   useEffect(() => {
     const fetchTransaction = async () => {
-      if (!transactionId) return;
-      
-      setIsLoading(true);
-      const docRef = doc(db, 'transactions', transactionId);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const trans: Transaction = {
-          id: docSnap.id,
-          items: data.items as CartItem[],
-          total: data.total,
-          payment: {
-            method: data.payment.method,
-            cashReceived: data.payment.cashReceived || 0,
-            change: data.payment.change || 0
-          },
-          timestamp: data.timestamp.toDate()
-        };
-        setTransaction(trans);
+      if (!transactionId) {
+        setIsLoading(false);
+        return;
       }
-      setIsLoading(false);
+
+      setIsLoading(true);
+      try {
+        const trans = await getTransactionById(transactionId);
+        setTransaction(trans);
+      } catch (error) {
+        console.error('Failed to fetch transaction:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     fetchTransaction();

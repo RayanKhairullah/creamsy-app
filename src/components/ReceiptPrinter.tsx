@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getTransactionById } from '@/lib/transactionService';
 import { Transaction, CartItem } from '@/types';
 
 export default function ReceiptPrinter({ transactionId }: { transactionId: string }) {
@@ -13,25 +12,14 @@ export default function ReceiptPrinter({ transactionId }: { transactionId: strin
   useEffect(() => {
     const fetchTransaction = async () => {
       setIsLoading(true);
-      const docRef = doc(db, "transactions", transactionId);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const transactionData: Transaction = {
-          id: docSnap.id,
-          items: data.items as CartItem[],
-          total: data.total,
-          payment: {
-            method: data.payment.method,
-            cashReceived: data.payment.cashReceived || 0, 
-            change: data.payment.change || 0
-          },
-          timestamp: data.timestamp.toDate()
-        };
-        setTransaction(transactionData);
+      try {
+        const trans = await getTransactionById(transactionId);
+        setTransaction(trans);
+      } catch (error) {
+        console.error('Failed to fetch transaction:', error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     
     fetchTransaction();
@@ -67,7 +55,7 @@ export default function ReceiptPrinter({ transactionId }: { transactionId: strin
     <div className="p-4">
       <h1 className="text-xl font-bold mb-6">Struk Pembayaran</h1>
       
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="bg-white p-6 rounded-lg shadow-md text-black">
         <div className="text-center mb-4">
           <div className="font-bold">🍦 Creamsy Ice Cream</div>
           <div className="text-sm">Jl. Es Krim No. 123</div>

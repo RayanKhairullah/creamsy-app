@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getProducts, createProduct, updateProduct, deleteProduct } from "@/lib/productService";
+import { uploadImage } from "@/lib/storageService";
 import { Product } from "@/types";
 
 interface ProductFormProps {
   product?: Product;
-  onSave: (data: Omit<Product, "id">, id?: string) => void;
+  onSave: (data: Omit<Product, "id">, id?: string, imageFile?: File) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -13,12 +14,12 @@ function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
   const [name, setName] = useState(product?.name || "");
   const [price, setPrice] = useState(product?.price?.toString() || "");
   const [type, setType] = useState<Product["type"]>(product?.type || "base");
-  const [image, setImage] = useState(product?.image || "");
+  const [imageFile, setImageFile] = useState<File | undefined>();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !price || !type) return;
-    onSave({ name, price: Number(price), type, image });
+    await onSave({ name, price: Number(price), type, image: product?.image || '' }, product?.id, imageFile);
   };
 
   return (
@@ -30,7 +31,7 @@ function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         <option value="base">Base</option>
         <option value="topping">Topping</option>
       </select>
-      <input className="w-full border p-2 rounded" placeholder="Image URL" value={image} onChange={e => setImage(e.target.value)} />
+      <input type="file" accept="image/png, image/jpeg, image/jpg" className="w-full border p-2 rounded" onChange={e => setImageFile(e.target.files?.[0])} />
       <div className="flex gap-2">
         <button type="submit" className="bg-ice-cream-500 text-black px-4 py-2 rounded font-semibold">Simpan</button>
         <button type="button" className="bg-gray-200 text-black px-4 py-2 rounded" onClick={onCancel}>Batal</button>
@@ -53,11 +54,18 @@ export default function ProductsPage() {
 
   useEffect(() => { fetchProducts(); }, []);
 
-  const handleSave = async (data: Omit<Product, "id">, id?: string) => {
+  const handleSave = async (data: Omit<Product, "id">, id?: string, imageFile?: File) => {
+    let imageUrl = data.image;
+    if (imageFile) {
+      imageUrl = await uploadImage(imageFile);
+    }
+
+    const productData = { ...data, image: imageUrl };
+
     if (id) {
-      await updateProduct(id, data);
+      await updateProduct(id, productData);
     } else {
-      await createProduct(data);
+      await createProduct(productData);
     }
     setShowForm(false);
     setEditing(null);
@@ -72,13 +80,13 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
+    <div className="max-w-2xl mx-auto p-4 text-black">
       <h1 className="text-2xl font-bold mb-4">Manajemen Produk</h1>
       {showForm || editing ? (
         <ProductForm product={editing || undefined} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null); }} />
       ) : (
         <>
-          <button className="mb-4 bg-ice-cream-500 text-white px-4 py-2 rounded font-semibold" onClick={() => setShowForm(true)}>Tambah Produk</button>
+          <button className="mb-4 bg-ice-cream-500 text-black px-4 py-2 rounded font-semibold" onClick={() => setShowForm(true)}>Tambah Produk</button>
           {loading ? <div>Loading...</div> : (
             <table className="w-full border rounded shadow">
               <thead>
